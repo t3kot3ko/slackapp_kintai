@@ -1,0 +1,61 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  slackapp_kintai
+
+  Sample SAM Template for slackapp_kintai
+
+# More info about Globals: https://github.com/awslabs/serverless-application-model/blob/master/docs/globals.rst
+Globals:
+  Function:
+    Timeout: 3
+
+Resources:
+  SlackAppKintaiFunction:
+    Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
+    Properties:
+      CodeUri: kintai/
+      Handler: app.lambda_handler
+      Runtime: python3.8
+      Policies:
+        - Statement:
+          - Sid: PutItemToDDB
+            Effect: Allow
+            Action:
+              - dynamodb:PutItem
+            Resource: !GetAtt KintaiTable.Arn
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref KintaiTable
+          SLACK_VERIFICATION_TOKEN: 
+          HTTPS_PROXY:
+      Events:
+        KintaiPost:
+          Type: Api 
+          Properties:
+            Path: /kintai
+            Method: post
+  KintaiTable:
+    Type: AWS::Serverless::SimpleTable
+    Properties:
+      PrimaryKey:
+        Name: event_id
+        Type: String
+
+
+Outputs:
+  # ServerlessRestApi is an implicit API created out of Events key under Serverless::Function
+  # Find out more about other implicit resources you can reference within SAM
+  # https://github.com/awslabs/serverless-application-model/blob/master/docs/internals/generated_resources.rst#api
+  SlackAppKintaiApi:
+    Description: "API Gateway endpoint URL for Prod stage for SlackAppKintai function"
+    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/kintai/"
+  SlackAppKintaiFunction:
+    Description: "SlackAppKintaiFunction.Arn"
+    Value: !GetAtt SlackAppKintaiFunction.Arn
+  SlackAppKintaiFunctionRole:
+    Description: "Implicit IAM Role created for SlackAppKintai function"
+    Value: !GetAtt SlackAppKintaiFunctionRole.Arn
+  TableName:
+    Description: "ARN of table"
+    Value: !GetAtt KintaiTable.Arn
